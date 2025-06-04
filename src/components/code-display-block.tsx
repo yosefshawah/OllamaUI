@@ -13,7 +13,7 @@ interface ButtonCodeblockProps {
 export default function CodeDisplayBlock({ code }: ButtonCodeblockProps) {
   const [isCopied, setIsCopied] = useState(false);
   const isCopiedRef = useRef(false);
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
   const filteredCode = useMemo(
     () => code.split("\n").slice(1).join("\n") || code,
@@ -30,12 +30,14 @@ export default function CodeDisplayBlock({ code }: ButtonCodeblockProps) {
 
   const customStyle = useMemo(
     () =>
-      theme === "dark" ? { background: "#303033" } : { background: "#fcfcfc" },
-    [theme]
+      resolvedTheme === "dark"
+        ? { background: "#303033" }
+        : { background: "#fcfcfc" },
+    [resolvedTheme]
   );
   const codeTheme = useMemo(
-    () => (theme === "dark" ? dracula : github),
-    [theme]
+    () => (resolvedTheme === "dark" ? dracula : github),
+    [resolvedTheme]
   );
 
   const copyToClipboard = () => {
