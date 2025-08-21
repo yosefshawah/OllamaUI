@@ -42,6 +42,11 @@ jobs:
           repository: yosefshawah/OllamaUITesting
           token: ${{ secrets.UI_TESTING_GITHUB_TOKEN }}
           path: OllamaUITesting
+      - name: Debug repo path
+        run: |
+          pwd
+          ls -la
+          ls -la OllamaUITesting
 
       - name: Set up Python
         uses: actions/setup-python@v4
