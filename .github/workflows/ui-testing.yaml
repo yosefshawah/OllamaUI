@@ -1,0 +1,88 @@
+# .github/workflows/advanced-ui-testing.yaml
+name: UI Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to test against"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+jobs:
+  selenium-matrix-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+        resolution:
+          - { name: "desktop-full", width: 1920, height: 1080 }
+          - { name: "laptop", width: 1366, height: 768 }
+          - { name: "tablet", width: 1024, height: 768 }
+          - { name: "mobile", width: 375, height: 667 }
+      fail-fast: false # Continue other jobs even if one fails
+
+    name: Test ${{ matrix.browser }} - ${{ matrix.resolution.name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          repository: yosefshawah/OllamaUITesting
+          token: ${{ secrets.UI_TESTING_GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Chrome and ChromeDriver
+        if: matrix.browser == 'chrome'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Install Firefox and GeckoDriver
+        if: matrix.browser == 'firefox'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget tar
+          # Remove Snap Firefox if installed
+          sudo snap remove firefox || true
+          # Download official Firefox
+          wget -O firefox.tar.xz "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"
+          tar xJf firefox.tar.xz
+          sudo mv firefox /opt/firefox
+          sudo ln -s /opt/firefox/firefox /usr/local/bin/firefox
+          # Install GeckoDriver
+          wget https://github.com/mozilla/geckodriver/releases/latest/download/geckodriver-v0.36.0-linux64.tar.gz
+          tar -xvzf geckodriver-v0.36.0-linux64.tar.gz
+          sudo mv geckodriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/geckodriver
+
+      - name: Run Selenium tests
+        env:
+          HEADLESS: true
+          BROWSER: ${{ matrix.browser }}
+          SCREEN_WIDTH: ${{ matrix.resolution.width }}
+          SCREEN_HEIGHT: ${{ matrix.resolution.height }}
+          OLLAMA_URL: ${{ secrets.HOST }}
+          TEST_NAME: ${{ matrix.browser }}-${{ matrix.resolution.name }}
+        run: |
+          pytest tests/ -v --tb=short
