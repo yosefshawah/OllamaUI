@@ -85,7 +85,7 @@ jobs:
           BROWSER: ${{ matrix.browser }}
           SCREEN_WIDTH: ${{ matrix.resolution.width }}
           SCREEN_HEIGHT: ${{ matrix.resolution.height }}
-          OLLAMA_URL: ${{ secrets.HOST }}
+          OLLAMA_URL: http://52.18.93.49:3000/
           TEST_NAME: ${{ matrix.browser }}-${{ matrix.resolution.name }}
         run: |
           pytest tests/ -v --tb=short
