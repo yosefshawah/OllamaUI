@@ -41,12 +41,11 @@ jobs:
           fetch-depth: 1
           repository: yosefshawah/OllamaUITesting
           token: ${{ secrets.UI_TESTING_GITHUB_TOKEN }}
-          path: OllamaUITesting
+
       - name: Debug repo path
         run: |
           pwd
           ls -la
-          ls -la OllamaUITesting
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -54,7 +53,6 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        working-directory: OllamaUITesting
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -81,7 +79,6 @@ jobs:
           sudo chmod +x /usr/local/bin/geckodriver
 
       - name: Run Selenium tests
-        working-directory: OllamaUITesting
         env:
           HEADLESS: true
           BROWSER: ${{ matrix.browser }}
