@@ -38,9 +38,10 @@ jobs:
       - name: Checkout OllamaUITesting
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
           repository: yosefshawah/OllamaUITesting
-          token: ${{ secrets.UI_TESTING_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: .
+          clean: true
 
       - name: Debug repo path
         run: |
