@@ -117,12 +117,12 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Download all Allure results
-        uses: actions/download-artifact@v4
-        with:
-          pattern: allure-results-*
-          path: allure-results
-          merge-multiple: true
+      - name: Merge Allure Results
+        run: |
+          mkdir -p allure-results
+          for dir in allure-results-*; do
+            cp -r $dir/. allure-results/
+          done
 
       - name: Get Allure history
         uses: actions/checkout@v4
