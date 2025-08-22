@@ -138,13 +138,6 @@ jobs:
           path: ./allure-results
           merge-multiple: true
 
-      - name: Download all Allure results
-        uses: actions/download-artifact@v4
-        with:
-          pattern: allure-results-*
-          path: ./artifacts
-          merge-multiple: false
-
       - name: Merge Allure Results
         run: |
           mkdir -p allure-results
