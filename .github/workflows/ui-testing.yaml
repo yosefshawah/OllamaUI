@@ -93,6 +93,34 @@ jobs:
           Headless.Mode=true
           EOF
 
+      - name: Inject Allure parameters for matrix run
+        run: |
+          cat > conftest.py << 'PY'
+          import os
+          import pytest
+          try:
+              import allure
+          except Exception:
+              allure = None
+
+          @pytest.fixture(autouse=True)
+          def _allure_add_matrix_params():
+              if not allure:
+                  return
+              browser = os.getenv('BROWSER', 'unknown')
+              res_name = os.getenv('TEST_NAME', 'unknown')
+              width = os.getenv('SCREEN_WIDTH', '')
+              height = os.getenv('SCREEN_HEIGHT', '')
+              try:
+                  allure.dynamic.parameter('browser', browser)
+                  allure.dynamic.parameter('resolution', res_name)
+                  if width and height:
+                      allure.dynamic.parameter('screen', f"{width}x{height}")
+              except Exception:
+                  # Do not fail tests if allure is unavailable
+                  pass
+          PY
+
       - name: Run Selenium tests
         env:
           HEADLESS: true
