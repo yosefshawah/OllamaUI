@@ -131,6 +131,7 @@ jobs:
         with:
           ref: gh-pages
           path: gh-pages
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -140,15 +141,27 @@ jobs:
 
       - name: Setup Allure
         run: |
-          curl -o allure-commandline-2.25.0.tgz -Ls https://github.com/allure-framework/allure2/releases/download/2.25.0/allure-commandline-2.25.0.tgz
-          tar -zxvf allure-commandline-2.25.0.tgz -C /opt/
-          sudo ln -s /opt/allure-2.25.0/bin/allure /usr/bin/allure
+          wget -q -L https://github.com/allure-framework/allure2/releases/download/2.25.0/allure-2.25.0.tgz -O allure-2.25.0.tgz
+          sudo tar -xzf allure-2.25.0.tgz -C /opt/
+          sudo ln -sf /opt/allure-2.25.0/bin/allure /usr/bin/allure
+          allure --version
+
+      - name: Debug Allure files
+        run: |
+          ls -la
+          ls -la allure-results
 
       - name: Generate Allure Report
         run: |
-          # Copy history if exists
-          if [ -d "gh-pages/allure-history" ]; then
+          # Create allure-results directory if it doesn't exist
+          mkdir -p allure-results
+
+          # Copy history if gh-pages exists and has history
+          if [ -d "gh-pages" ] && [ -d "gh-pages/allure-history" ]; then
+            echo "Copying existing Allure history..."
             cp -r gh-pages/allure-history allure-results/history
+          else
+            echo "No existing Allure history found, starting fresh..."
           fi
 
           # Generate report
@@ -156,6 +169,9 @@ jobs:
 
           # Ensure proper permissions and structure
           chmod -R 755 allure-report
+
+          # Copy history for next run
+          cp -r allure-report/history allure-report/allure-history 2>/dev/null || echo "No history to preserve"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
