@@ -103,11 +103,7 @@ jobs:
           TEST_NAME: ${{ matrix.browser }}-${{ matrix.resolution.name }}
           ALLURE_RESULTS_DIR: allure-results
         run: |
-          pytest tests/ -v --tb=short \
-            --alluredir=allure-results \
-            --allure-label=browser:${{ matrix.browser }} \
-            --allure-label=resolution:${{ matrix.resolution.name }} \
-            --allure-label=environment:${{ matrix.browser }}-${{ matrix.resolution.name }}
+          pytest tests/ -v --tb=short --alluredir=allure-results
 
       - name: Upload Allure Results
         uses: actions/upload-artifact@v4
