@@ -187,7 +187,7 @@ jobs:
           if [ -d "./artifacts" ] && [ "$(ls -A ./artifacts)" ]; then
             echo "Found artifacts, merging..."
             
-            # Counter for unique file naming
+            # Use a counter for truly unique filenames
             counter=1
             
             for dir in ./artifacts/allure-results-*; do
@@ -198,18 +198,36 @@ jobs:
                 config_name=$(basename "$dir" | sed 's/allure-results-//')
                 echo "Configuration: $config_name"
                 
-                # Copy all files with unique prefixes to avoid overwrites
+                # Copy all files directly, but with unique names to avoid overwrites
                 for file in "$dir"/*; do
                   if [ -f "$file" ]; then
                     filename=$(basename "$file")
-                    # Add configuration prefix to maintain separation
-                    cp "$file" "allure-results/${config_name}-${filename}" 2>/dev/null || echo "Could not copy $file"
+                    extension="${filename##*.}"
+                    basename_no_ext="${filename%.*}"
+                    
+                    # Create unique filename: original-name-configname-counter.extension
+                    if [ "$filename" = "environment.properties" ]; then
+                      # Skip individual environment.properties files (we have a global one)
+                      continue
+                    else
+                      unique_filename="${basename_no_ext}-${config_name}-${counter}.${extension}"
+                    fi
+                    
+                    cp "$file" "allure-results/${unique_filename}" 2>/dev/null || echo "Could not copy $file"
+                    echo "Copied $filename as $unique_filename"
                   fi
                 done
                 
                 counter=$((counter + 1))
               fi
             done
+            
+            # Show what we have
+            echo "Final allure-results contents:"
+            ls -la allure-results/
+            echo "JSON files count:"
+            ls -1 allure-results/*.json 2>/dev/null | wc -l
+            
           else
             echo "No artifacts found, creating empty results directory"
             touch allure-results/.gitkeep
