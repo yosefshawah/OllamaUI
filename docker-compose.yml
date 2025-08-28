@@ -1,0 +1,12 @@
+services:
+  yolo:
+    image: yolo:0.0.1
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./uploads:/app/uploads
+
+  ollama-ui:
+    image: ollama-ui:0.0.1
+    ports:
+      - "3000:3000"
