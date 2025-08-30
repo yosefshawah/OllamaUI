@@ -1,23 +1,9 @@
-import { createOllama } from "ollama-ai-provider";
-import {
-  streamText,
-  convertToCoreMessages,
-  CoreMessage,
-  UserContent,
-} from "ai";
-
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   // Destructure request data
-  const { messages, selectedModel, data } = await req.json();
-
-  // Remove experimental_attachments from each message
-  const cleanedMessages = messages.map((message: any) => {
-    const { experimental_attachments, ...cleanMessage } = message;
-    return cleanMessage;
-  });
+  const { data } = await req.json();
 
   let message = "Please provide an image for object detection.";
 
@@ -35,14 +21,18 @@ export async function POST(req: Request) {
       const formData = new FormData();
       formData.append("file", blob, "image.jpg");
 
+      // Resolve YOLO service URL (env or fallback)
+      const yoloService = process.env.YOLO_SERVICE || "localhost:8080";
+      const yoloBase = yoloService.startsWith("http")
+        ? yoloService
+        : `http://${yoloService}`;
+      const predictUrl = `${yoloBase.replace(/\/$/, "")}/predict`;
+
       // Call the object detection API
-      const predictionResponse = await fetch(
-        `http://${process.env.YOLO_SERVICE}/predict`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const predictionResponse = await fetch(predictUrl, {
+        method: "POST",
+        body: formData,
+      });
 
       if (!predictionResponse.ok) {
         throw new Error(`Prediction API error: ${predictionResponse.status}`);
@@ -70,7 +60,9 @@ Sorry, I encountered an error while processing your image: ${
         error instanceof Error ? error.message : "Unknown error"
       }
 
-Please make sure the object detection service is running on localhost:8080.`;
+Please make sure the object detection service is reachable at ${
+        process.env.YOLO_SERVICE || "localhost:8080"
+      } and that the /predict endpoint is accepting POST requests.`;
     }
   }
 

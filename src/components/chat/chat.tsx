@@ -1,6 +1,5 @@
 "use client";
 
-import ChatTopbar from "./chat-topbar";
 import ChatList from "./chat-list";
 import ChatBottombar from "./chat-bottombar";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
@@ -65,8 +64,17 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
     e.preventDefault();
     window.history.replaceState({}, "", `/c/${id}`);
 
-    if (!selectedModel) {
-      toast.error("Please select a model");
+    if (
+      !base64Images ||
+      base64Images.length === 0 ||
+      !input ||
+      input.trim().length === 0
+    ) {
+      if (!base64Images || base64Images.length === 0) {
+        toast.error("Please attach at least one image");
+      } else {
+        toast.error("Please provide a name for this chat/image");
+      }
       return;
     }
 
@@ -86,15 +94,10 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
       : [];
 
     const requestOptions: ChatRequestOptions = {
-      body: {
-        selectedModel: selectedModel,
+      data: {
+        images: base64Images,
       },
-      ...(base64Images && {
-        data: {
-          images: base64Images,
-        },
-        experimental_attachments: attachments,
-      }),
+      experimental_attachments: attachments,
     };
 
     handleSubmit(e, requestOptions);
@@ -117,12 +120,7 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
 
   return (
     <div className="flex flex-col w-full max-w-3xl h-full">
-      <ChatTopbar
-        isLoading={isLoading}
-        chatId={id}
-        messages={messages}
-        setMessages={setMessages}
-      />
+      {/* Topbar removed in image-only mode */}
 
       {messages.length === 0 ? (
         <div className="flex flex-col h-full w-full items-center gap-4 justify-center">
@@ -154,11 +152,7 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
             reload={async () => {
               removeLatestMessage();
 
-              const requestOptions: ChatRequestOptions = {
-                body: {
-                  selectedModel: selectedModel,
-                },
-              };
+              const requestOptions: ChatRequestOptions = {};
 
               setLoadingSubmit(true);
               return reload(requestOptions);
