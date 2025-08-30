@@ -11,7 +11,6 @@ import SidebarSkeleton from "./sidebar-skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import UserSettings from "./user-settings";
 import { ScrollArea, Scrollbar } from "@radix-ui/react-scroll-area";
-import PullModel from "./pull-model";
 import {
   Dialog,
   DialogContent,

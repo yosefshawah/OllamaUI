@@ -1,18 +1,9 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { ChatProps } from "./chat";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { Button, buttonVariants } from "../ui/button";
-import TextareaAutosize from "react-textarea-autosize";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Cross2Icon,
-  ImageIcon,
-  PaperPlaneIcon,
-  StopIcon,
-} from "@radix-ui/react-icons";
+import { Button } from "../ui/button";
+import { AnimatePresence } from "framer-motion";
+import { Cross2Icon, StopIcon } from "@radix-ui/react-icons";
 import { Mic, SendHorizonal } from "lucide-react";
 import useSpeechToText from "@/app/hooks/useSpeechRecognition";
 import MultiImagePicker from "../image-embedder";
@@ -44,7 +35,6 @@ export default function ChatBottombar({
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const base64Images = useChatStore((state) => state.base64Images);
   const setBase64Images = useChatStore((state) => state.setBase64Images);
-  const selectedModel = useChatStore((state) => state.selectedModel);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -89,7 +79,9 @@ export default function ChatBottombar({
             onKeyDown={handleKeyPress}
             onChange={handleInputChange}
             name="message"
-            placeholder={!isListening ? "Enter your prompt here" : "Listening"}
+            placeholder={
+              !isListening ? "Give name for this chat/image" : "Listening"
+            }
             className="max-h-40 px-6 pt-6 border-0 shadow-none bg-accent rounded-lg text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed dark:bg-card"
           />
 
@@ -157,9 +149,9 @@ export default function ChatBottombar({
                     type="submit"
                     disabled={
                       isLoading ||
-                      !input.trim() ||
                       isListening ||
-                      !selectedModel
+                      !(base64Images && base64Images.length > 0) ||
+                      !(input && input.trim().length > 0)
                     }
                   >
                     <SendHorizonal className="w-5 h-5" />
