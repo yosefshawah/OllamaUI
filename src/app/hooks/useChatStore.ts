@@ -9,6 +9,7 @@ interface ChatSession {
 
 interface State {
   base64Images: string[] | null;
+  imageFilenames: string[] | null;
   chats: Record<string, ChatSession>;
   currentChatId: string | null;
   selectedModel: string | null;
@@ -20,6 +21,7 @@ interface State {
 
 interface Actions {
   setBase64Images: (base64Images: string[] | null) => void;
+  setImageFilenames: (filenames: string[] | null) => void;
   setCurrentChatId: (chatId: string) => void;
   setSelectedModel: (selectedModel: string) => void;
   getChatById: (chatId: string) => ChatSession | undefined;
@@ -36,15 +38,17 @@ const useChatStore = create<State & Actions>()(
   persist(
     (set, get) => ({
       base64Images: null,
+      imageFilenames: null,
       chats: {},
       currentChatId: null,
       selectedModel: null,
       userName: "Anonymous",
       isDownloading: false,
       downloadProgress: 0,
-      downloadingModel: null, 
+      downloadingModel: null,
 
       setBase64Images: (base64Images) => set({ base64Images }),
+      setImageFilenames: (filenames) => set({ imageFilenames: filenames }),
       setUserName: (userName) => set({ userName }),
 
       setCurrentChatId: (chatId) => set({ currentChatId: chatId }),
@@ -102,9 +106,17 @@ const useChatStore = create<State & Actions>()(
       },
 
       startDownload: (modelName) =>
-        set({ isDownloading: true, downloadingModel: modelName, downloadProgress: 0 }),
+        set({
+          isDownloading: true,
+          downloadingModel: modelName,
+          downloadProgress: 0,
+        }),
       stopDownload: () =>
-        set({ isDownloading: false, downloadingModel: null, downloadProgress: 0 }),
+        set({
+          isDownloading: false,
+          downloadingModel: null,
+          downloadProgress: 0,
+        }),
       setDownloadProgress: (progress) => set({ downloadProgress: progress }),
     }),
     {

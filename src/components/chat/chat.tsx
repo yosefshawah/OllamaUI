@@ -55,8 +55,11 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const base64Images = useChatStore((state) => state.base64Images);
   const setBase64Images = useChatStore((state) => state.setBase64Images);
+  const imageFilenames = useChatStore((state) => state.imageFilenames);
+  const setImageFilenames = useChatStore((state) => state.setImageFilenames);
   const selectedModel = useChatStore((state) => state.selectedModel);
   const saveMessages = useChatStore((state) => state.saveMessages);
+  const currentChatId = useChatStore((state) => state.currentChatId);
   const getMessagesById = useChatStore((state) => state.getMessagesById);
   const router = useRouter();
 
@@ -96,6 +99,8 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
     const requestOptions: ChatRequestOptions = {
       data: {
         images: base64Images,
+        chatId: currentChatId ?? id,
+        filenames: imageFilenames ?? null,
       },
       experimental_attachments: attachments,
     };
@@ -103,6 +108,7 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
     handleSubmit(e, requestOptions);
     saveMessages(id, [...messages, userMessage]);
     setBase64Images(null);
+    setImageFilenames(null);
   };
 
   const removeLatestMessage = () => {

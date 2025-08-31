@@ -35,6 +35,7 @@ export default function ChatBottombar({
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const base64Images = useChatStore((state) => state.base64Images);
   const setBase64Images = useChatStore((state) => state.setBase64Images);
+  const setImageFilenames = useChatStore((state) => state.setImageFilenames);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -89,7 +90,11 @@ export default function ChatBottombar({
             {isLoading ? (
               // Loading state
               <div className="flex w-full justify-between">
-                <MultiImagePicker disabled onImagesPick={setBase64Images} />
+                <MultiImagePicker
+                  disabled
+                  onImagesPick={setBase64Images}
+                  onNamesPick={setImageFilenames}
+                />
                 <div>
                   <Button
                     className="shrink-0 rounded-full"
@@ -120,6 +125,7 @@ export default function ChatBottombar({
                 <MultiImagePicker
                   disabled={isLoading}
                   onImagesPick={setBase64Images}
+                  onNamesPick={setImageFilenames}
                 />
                 <div>
                   {/* Microphone button with animation when listening */}
