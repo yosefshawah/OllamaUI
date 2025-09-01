@@ -1,12 +1,21 @@
+version: "3.9"
+
 services:
   yolo:
-    image: yolo:0.0.1
+    image: yosefshawah/yolo:0.0.2
     ports:
       - "8080:8080"
     volumes:
       - ./uploads:/app/uploads
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
 
   ollama-ui:
-    image: ollama-ui:0.0.1
+    image: yosefshawah/ollama-ui:0.0.1
     ports:
       - "3000:3000"
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+    command: ["npm", "start", "--", "-H", "0.0.0.0"]

@@ -1,4 +1,4 @@
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
@@ -12,14 +12,40 @@ export async function POST(req: Request) {
     try {
       // Handle object detection for the first image
       const imageUrl = data.images[0];
+      const chatId: string | undefined = data.chatId;
+      const filenames: string[] | undefined = Array.isArray(data.filenames)
+        ? data.filenames
+        : undefined;
 
-      // Convert data URL to blob for upload
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
+      // Parse base64 data URL -> Buffer and content type
+      const dataUrlMatch = imageUrl.match(/^data:(.*?);base64,(.*)$/);
+      if (!dataUrlMatch) {
+        throw new Error("Invalid image data URL format");
+      }
+      const contentType = dataUrlMatch[1] || "image/jpeg";
+      const base64Payload = dataUrlMatch[2];
+      const buffer = Buffer.from(base64Payload, "base64");
 
-      // Create FormData for the prediction API
-      const formData = new FormData();
-      formData.append("file", blob, "image.jpg");
+      // Lazy import to avoid edge bundling issues and keep type isolation
+      const { buildImageKey, uploadImageBufferToS3 } = await import(
+        "@/services/s3"
+      );
+
+      const extensionFromType = contentType.split("/")[1] || "jpg";
+      const originalNameFromClient = filenames?.[0];
+      const key = buildImageKey({
+        chatId: chatId || "unknown-chat",
+        originalFilename:
+          originalNameFromClient || `image.${extensionFromType}`,
+        extensionFallback: extensionFromType,
+      });
+
+      // Upload to S3 first
+      const upload = await uploadImageBufferToS3({
+        key,
+        contentType,
+        buffer,
+      });
 
       // Resolve YOLO service URL (env or fallback)
       const yoloService = process.env.YOLO_SERVICE || "localhost:8080";
@@ -28,10 +54,12 @@ export async function POST(req: Request) {
         : `http://${yoloService}`;
       const predictUrl = `${yoloBase.replace(/\/$/, "")}/predict`;
 
-      // Call the object detection API
-      const predictionResponse = await fetch(predictUrl, {
+      // Call the object detection API using query params as expected by YOLO (img key + optional chat_id)
+      const predictUrlWithQuery = `${predictUrl}?img=${encodeURIComponent(
+        upload.key
+      )}${chatId ? `&chat_id=${encodeURIComponent(chatId)}` : ""}`;
+      const predictionResponse = await fetch(predictUrlWithQuery, {
         method: "POST",
-        body: formData,
       });
 
       if (!predictionResponse.ok) {
