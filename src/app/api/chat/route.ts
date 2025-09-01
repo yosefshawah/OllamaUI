@@ -47,17 +47,6 @@ export async function POST(req: Request) {
         buffer,
       });
 
-      // Create FormData for the prediction API (attach S3 metadata too)
-      const formData = new FormData();
-      formData.append(
-        "file",
-        new Blob([buffer], { type: contentType }),
-        originalNameFromClient || key
-      );
-      formData.append("s3_key", upload.key);
-      formData.append("s3_url", upload.url);
-      if (chatId) formData.append("chat_id", chatId);
-
       // Resolve YOLO service URL (env or fallback)
       const yoloService = process.env.YOLO_SERVICE || "localhost:8080";
       const yoloBase = yoloService.startsWith("http")
@@ -65,10 +54,12 @@ export async function POST(req: Request) {
         : `http://${yoloService}`;
       const predictUrl = `${yoloBase.replace(/\/$/, "")}/predict`;
 
-      // Call the object detection API
-      const predictionResponse = await fetch(predictUrl, {
+      // Call the object detection API using query params as expected by YOLO (img key + optional chat_id)
+      const predictUrlWithQuery = `${predictUrl}?img=${encodeURIComponent(
+        upload.key
+      )}${chatId ? `&chat_id=${encodeURIComponent(chatId)}` : ""}`;
+      const predictionResponse = await fetch(predictUrlWithQuery, {
         method: "POST",
-        body: formData,
       });
 
       if (!predictionResponse.ok) {
