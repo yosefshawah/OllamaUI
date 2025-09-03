@@ -44,8 +44,18 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Stop and remove old containers
+            # Stop and remove all containers (force cleanup)
             docker-compose down || true
+            docker stop $(docker ps -aq) 2>/dev/null || true
+            docker rm $(docker ps -aq) 2>/dev/null || true
+
+            # Remove all images to free space
+            docker rmi $(docker images -q) 2>/dev/null || true
+
+            # Clean up dangling volumes and networks
+            docker volume prune -f || true
+            docker network prune -f || true
+            docker system prune -f || true
 
             # Create .env file with the new image tag
             cat > .env << EOF
