@@ -156,6 +156,8 @@ jobs:
           Test.Environment=${{ matrix.browser }}-${{ matrix.resolution.name }}
           Ollama.URL=http://${{ secrets.EC2_HOST }}:3000/
           Headless.Mode=true
+          Ollama.Image=yosefshawah/ollama-ui:${{ needs.deploy.outputs.ollama_image_tag }}
+          YOLO.Image=yosefshawah/yolo:0.0.3
           Ollama.Image.Tag=${{ needs.deploy.outputs.ollama_image_tag }}
           YOLO.Image.Tag=${{ needs.deploy.outputs.yolo_image_tag }}
           EOF
@@ -299,13 +301,15 @@ jobs:
           EOF
 
           # Create global environment properties
-          cat > allure-results/environment.properties << 'EOF'
+          cat > allure-results/environment.properties << EOF
           Test.Framework=Selenium+Pytest
           CI.Platform=GitHub Actions
           Test.Types=UI Automation
           Browsers=Chrome, Firefox
           Resolutions=Desktop (1920x1080), Laptop (1366x768), Tablet (1024x768), Mobile (375x667)
           Target.URL=http://${{ secrets.EC2_HOST }}:3000/
+          Ollama.Image=yosefshawah/ollama-ui:${{ needs.deploy.outputs.ollama_image_tag }}
+          YOLO.Image=yosefshawah/yolo:0.0.3
           Ollama.Image.Tag=${{ needs.deploy.outputs.ollama_image_tag }}
           YOLO.Image.Tag=${{ needs.deploy.outputs.yolo_image_tag }}
           EOF
