@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: E2E Testing
 
 on:
   pull_request:
