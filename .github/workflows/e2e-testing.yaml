@@ -8,41 +8,30 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     outputs:
-      ollama_image_tag: ${{ steps.set_outputs.outputs.ollama_image_tag }}
-      yolo_image_tag: ${{ steps.set_outputs.outputs.yolo_image_tag }}
+      ollama_image_tag: ${{ steps.compute_tag.outputs.tag }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: compute_tag
+        run: |
+          TAG="${GITHUB_SHA}-$(date +%Y%m%d-%H%M%S)"
+          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         run: |
           # Login to DockerHub
           echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
-          TAG="${{ github.sha }}-$(date +%Y%m%d-%H%M%S)"
 
           # Build the image with the tag
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/ollama-ui:$TAG .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/ollama-ui:$IMAGE_TAG .
 
           # Push the image to DockerHub
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ollama-ui:$TAG
-
-          # Save the tag for later steps
-          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
-
-      - name: Set job outputs (image tags)
-        id: set_outputs
-        run: |
-          # Ollama UI image tag from previous step
-          echo "ollama_image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-
-          # Parse YOLO image tag from docker-compose.yml
-          YOLO_IMAGE=$(awk '/^  yolo:/{flag=1;next}/^[^ ]/{flag=0}flag && $1 ~ /image:/{print $2}' docker-compose.yml)
-          # Extract tag after the last ':' (handles registry prefixes safely)
-          YOLO_TAG=${YOLO_IMAGE##*:}
-          if [ -z "$YOLO_TAG" ]; then YOLO_TAG=latest; fi
-          echo "yolo_image_tag=$YOLO_TAG" >> $GITHUB_OUTPUT
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ollama-ui:$IMAGE_TAG
 
       - name: Copy docker-compose file to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -158,8 +147,6 @@ jobs:
           Headless.Mode=true
           Ollama.Image=yosefshawah/ollama-ui:${{ needs.deploy.outputs.ollama_image_tag }}
           YOLO.Image=yosefshawah/yolo:0.0.3
-          Ollama.Image.Tag=${{ needs.deploy.outputs.ollama_image_tag }}
-          YOLO.Image.Tag=${{ needs.deploy.outputs.yolo_image_tag }}
           EOF
 
       - name: Inject Allure parameters for matrix run (append-safe)
@@ -310,8 +297,6 @@ jobs:
           Target.URL=http://${{ secrets.EC2_HOST }}:3000/
           Ollama.Image=yosefshawah/ollama-ui:${{ needs.deploy.outputs.ollama_image_tag }}
           YOLO.Image=yosefshawah/yolo:0.0.3
-          Ollama.Image.Tag=${{ needs.deploy.outputs.ollama_image_tag }}
-          YOLO.Image.Tag=${{ needs.deploy.outputs.yolo_image_tag }}
           EOF
 
           # Check if artifacts directory exists and has content
