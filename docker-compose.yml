@@ -1,21 +1,50 @@
 version: "3.9"
 
 services:
+  postgres:
+    image: postgres:15
+    container_name: my-app-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: predictions
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   yolo:
-    image: yosefshawah/yolo:0.0.2
+    image: yosefshawah/yolo:0.0.3
+    container_name: my-app-yolo
     ports:
       - "8080:8080"
     volumes:
       - ./uploads:/app/uploads
     restart: unless-stopped
     environment:
-      - PYTHONUNBUFFERED=1
+      PYTHONUNBUFFERED: "1"
+      AWS_REGION: eu-west-1
+      AWS_S3_BUCKET: yosef-bucket-5tech
+      DB_BACKEND: postgres
+      DATABASE_URL: postgresql+psycopg2://user:pass@postgres:5432/predictions
+    depends_on:
+      - postgres
 
   ollama-ui:
-    image: yosefshawah/ollama-ui:0.0.1
+    image: ${DOCKERHUB_USERNAME}/ollama-ui:${OLLAMA_UI_IMG_TAG}
+    container_name: my-app-ollama-ui
     ports:
       - "3000:3000"
     restart: unless-stopped
     environment:
-      - PORT=3000
+      PORT: "3000"
+      S3_REGION: eu-west-1
+      S3_BUCKET: yosef-bucket-5tech
+      YOLO_SERVICE: yolo:8080
+    depends_on:
+      - yolo
     command: ["npm", "start", "--", "-H", "0.0.0.0"]
+
+volumes:
+  postgres_data:
