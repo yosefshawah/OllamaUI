@@ -40,6 +40,7 @@ export default function UserSettings() {
         <Button
           variant="ghost"
           className="flex justify-start gap-3 w-full h-14 text-base font-normal items-center "
+          data-testid="user-menu-button"
         >
           <Avatar className="flex justify-start items-center overflow-hidden">
             <AvatarImage
@@ -59,12 +60,18 @@ export default function UserSettings() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48 p-2">
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+        <DropdownMenuItem
+          onSelect={(e) => e.preventDefault()}
+          data-testid="menu-pull-model"
+        >
           <PullModel />
         </DropdownMenuItem>
         <Dialog>
           <DialogTrigger className="w-full">
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
+              data-testid="menu-settings"
+            >
               <div className="flex w-full gap-2 p-1 items-center cursor-pointer">
                 <GearIcon className="w-4 h-4" />
                 Settings
