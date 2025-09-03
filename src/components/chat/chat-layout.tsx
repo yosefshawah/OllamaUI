@@ -12,6 +12,8 @@ import { Message, useChat } from "ai/react";
 import Chat, { ChatProps } from "./chat";
 import ChatList from "./chat-list";
 import { HamburgerMenuIcon } from "@radix-ui/react-icons";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface ChatLayoutProps {
   defaultLayout: number[] | undefined;
@@ -30,6 +32,7 @@ export function ChatLayout({
 }: MergedProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
   const [isMobile, setIsMobile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkScreenWidth = () => {
@@ -94,6 +97,36 @@ export function ChatLayout({
         className="h-full w-full flex justify-center"
         defaultSize={defaultLayout[1]}
       >
+        {isMobile && (
+          <>
+            <Button
+              data-testid="hamburger-button"
+              aria-label="Open sidebar"
+              variant="ghost"
+              size="icon"
+              className="md:hidden absolute top-3 left-3 z-50 rounded-full"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <HamburgerMenuIcon className="h-5 w-5" />
+            </Button>
+
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetContent
+                side="left"
+                className="p-0 w-[85%] max-w-sm"
+                data-testid="mobile-sidebar"
+              >
+                <Sidebar
+                  isCollapsed={false}
+                  messages={initialMessages}
+                  isMobile={true}
+                  chatId={id}
+                  closeSidebar={() => setMobileMenuOpen(false)}
+                />
+              </SheetContent>
+            </Sheet>
+          </>
+        )}
         <Chat id={id} initialMessages={initialMessages} isMobile={isMobile} />
       </ResizablePanel>
     </ResizablePanelGroup>
