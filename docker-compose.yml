@@ -32,7 +32,7 @@ services:
       - postgres
 
   ollama-ui:
-    image: yosefshawah/ollama-ui:2b9bce13d665488c9f0a7785bf47b53fc58c4e22-20250901-143655
+    image: ${DOCKERHUB_USERNAME}/ollama-ui:${OLLAMA_UI_IMG_TAG}
     container_name: my-app-ollama-ui
     ports:
       - "3000:3000"
