@@ -20,13 +20,6 @@ function getEnv(name: string, fallback?: string): string {
 
 const s3Client = new S3Client({
   region: getEnv("S3_REGION", process.env.AWS_REGION),
-  credentials: process.env.AWS_ACCESS_KEY_ID
-    ? {
-        accessKeyId: getEnv("AWS_ACCESS_KEY_ID"),
-        secretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY"),
-      }
-    : undefined,
-  endpoint: process.env.S3_ENDPOINT,
   forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
 });
 
