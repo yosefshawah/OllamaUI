@@ -229,7 +229,9 @@ jobs:
 
   generate-allure-report:
     runs-on: ubuntu-latest
-    needs: selenium-matrix-tests
+    needs:
+      - deploy
+      - selenium-matrix-tests
     if: always()
 
     permissions:
