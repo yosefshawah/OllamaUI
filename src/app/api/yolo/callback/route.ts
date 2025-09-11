@@ -1,5 +1,6 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+import { publish } from "@/lib/sse-bus";
 
 export async function POST(request: Request) {
   try {
@@ -26,6 +27,14 @@ export async function POST(request: Request) {
       predictionUid,
       chatId,
       detectionCount,
+      labels,
+      error,
+    });
+
+    // Broadcast via SSE by predictionUid
+    publish(predictionUid, {
+      prediction_uid: predictionUid,
+      detection_count: detectionCount,
       labels,
       error,
     });

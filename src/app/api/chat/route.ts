@@ -9,6 +9,7 @@ export async function POST(req: Request) {
   const { data } = await req.json();
 
   let message = "Please provide an image for object detection.";
+  let enqueuedPredictionUid: string | undefined;
 
   // Check if there are images for object detection
   if (data?.images && data.images.length > 0) {
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
       });
 
       // Generate a prediction UID and enqueue job to RabbitMQ for YOLO worker
-      const predictionUid = randomUUID();
+      enqueuedPredictionUid = randomUUID();
       const baseUrl =
         process.env.OLLAMA_UI_PUBLIC_URL || "http://localhost:3000/";
       const callbackUrl = `${baseUrl.replace(/\/$/, "")}/api/yolo/callback`;
@@ -60,11 +61,11 @@ export async function POST(req: Request) {
         imgKey: upload.key,
         chatId,
         callbackUrl,
-        predictionUid,
+        predictionUid: enqueuedPredictionUid,
       });
 
       // Inform the user that the job is queued; actual results will arrive via callback
-      message = `🕒 Queued object detection job (id: ${predictionUid}). You'll receive results shortly.`;
+      message = `🕒 Queued object detection job (id: ${enqueuedPredictionUid}). You'll receive results shortly.`;
     } catch (error) {
       console.error("Object detection error:", error);
       message = `❌ **Object Detection Error**
@@ -121,6 +122,7 @@ Please make sure the message queue is reachable at ${
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "X-Vercel-AI-Data-Stream": "v1",
+      "X-Prediction-Uid": enqueuedPredictionUid ?? "",
     },
   });
 }
