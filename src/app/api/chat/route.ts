@@ -1,6 +1,9 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+import { enqueueYoloJob } from "@/lib/rabbitmq";
+import { randomUUID } from "crypto";
+
 export async function POST(req: Request) {
   // Destructure request data
   const { data } = await req.json();
@@ -47,39 +50,21 @@ export async function POST(req: Request) {
         buffer,
       });
 
-      // Resolve YOLO service URL (env or fallback)
-      const yoloService = process.env.YOLO_SERVICE || "localhost:8080";
-      const yoloBase = yoloService.startsWith("http")
-        ? yoloService
-        : `http://${yoloService}`;
-      const predictUrl = `${yoloBase.replace(/\/$/, "")}/predict`;
+      // Generate a prediction UID and enqueue job to RabbitMQ for YOLO worker
+      const predictionUid = randomUUID();
+      const baseUrl =
+        process.env.OLLAMA_UI_PUBLIC_URL || "http://localhost:3000/";
+      const callbackUrl = `${baseUrl.replace(/\/$/, "")}/api/yolo/callback`;
 
-      // Call the object detection API using query params as expected by YOLO (img key + optional chat_id)
-      const predictUrlWithQuery = `${predictUrl}?img=${encodeURIComponent(
-        upload.key
-      )}${chatId ? `&chat_id=${encodeURIComponent(chatId)}` : ""}`;
-      const predictionResponse = await fetch(predictUrlWithQuery, {
-        method: "POST",
+      await enqueueYoloJob({
+        imgKey: upload.key,
+        chatId,
+        callbackUrl,
+        predictionUid,
       });
 
-      if (!predictionResponse.ok) {
-        throw new Error(`Prediction API error: ${predictionResponse.status}`);
-      }
-
-      const predictionResult = await predictionResponse.json();
-
-      // Format the detection results for chat
-      message = `🔍 **Object Detection Results**
-
-**Detection Count:** ${predictionResult.detection_count}
-**Detected Objects:** ${predictionResult.labels.join(", ")}
-**Prediction ID:** ${predictionResult.prediction_uid}
-
-I've analyzed your image and detected ${
-        predictionResult.detection_count
-      } object(s). The detected objects include: ${predictionResult.labels.join(
-        ", "
-      )}.`;
+      // Inform the user that the job is queued; actual results will arrive via callback
+      message = `🕒 Queued object detection job (id: ${predictionUid}). You'll receive results shortly.`;
     } catch (error) {
       console.error("Object detection error:", error);
       message = `❌ **Object Detection Error**
@@ -88,9 +73,9 @@ Sorry, I encountered an error while processing your image: ${
         error instanceof Error ? error.message : "Unknown error"
       }
 
-Please make sure the object detection service is reachable at ${
-        process.env.YOLO_SERVICE || "localhost:8080"
-      } and that the /predict endpoint is accepting POST requests.`;
+Please make sure the message queue is reachable at ${
+        process.env.RABBITMQ_URL || "amqp://localhost:5672"
+      } and that the YOLO worker is consuming.`;
     }
   }
 
