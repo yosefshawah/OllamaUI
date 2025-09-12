@@ -36,6 +36,41 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
     onResponse: (response) => {
       if (response) {
         setLoadingSubmit(false);
+        const uid = response.headers.get("X-Prediction-Uid");
+        if (uid) {
+          try {
+            esRef.current?.close();
+            const es = new EventSource(`/api/yolo/stream/${uid}`);
+            es.onmessage = (ev) => {
+              try {
+                const data = JSON.parse(ev.data);
+                if (data?.error) return;
+                const detectionCount = data?.detection_count ?? 0;
+                const labels: string[] = Array.isArray(data?.labels)
+                  ? data.labels
+                  : [];
+                const text = `🔍 Object Detection Results\n\nDetection Count: ${detectionCount}\nDetected Objects: ${labels.join(
+                  ", "
+                )}`;
+                const assistantMessage: Message = {
+                  id: generateId(),
+                  role: "assistant",
+                  content: text,
+                };
+                const updated = [...getMessagesById(id), assistantMessage];
+                setMessages(updated);
+                saveMessages(id, updated);
+                setTimeout(() => {
+                  const el = document.getElementById("chat-scroll");
+                  if (el)
+                    el.scrollTo({ top: el.scrollHeight, behavior: "auto" });
+                }, 0);
+              } catch {}
+            };
+            es.onerror = () => es.close();
+            esRef.current = es;
+          } catch {}
+        }
       }
     },
     onFinish: (message) => {
@@ -62,6 +97,8 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
   const currentChatId = useChatStore((state) => state.currentChatId);
   const getMessagesById = useChatStore((state) => state.getMessagesById);
   const router = useRouter();
+
+  const esRef = useRef<EventSource | null>(null);
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -123,6 +160,12 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
     saveMessages(id, [...messages]);
     setLoadingSubmit(false);
   };
+
+  React.useEffect(() => {
+    return () => {
+      esRef.current?.close();
+    };
+  }, []);
 
   return (
     <div className="flex flex-col w-full max-w-3xl h-full">
